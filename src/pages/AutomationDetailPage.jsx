@@ -28,6 +28,8 @@ export default function AutomationDetailPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [testEmailSending, setTestEmailSending] = useState(false)
   const [testEmailStatus, setTestEmailStatus] = useState('')
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [confirmingRunId, setConfirmingRunId] = useState(null)
 
   useDocumentTitle(automation ? `${automation.name} - Automation` : 'Automation Details')
 
@@ -82,10 +84,13 @@ export default function AutomationDetailPage() {
   }
 
   const handleDelete = async () => {
-    if (confirm('Are you sure you want to delete this automation and all its run history?')) {
-      await deleteAutomation(automation.id)
-      navigate('/automations')
+    if (!confirmingDelete) {
+      setConfirmingDelete(true)
+      return
     }
+    setConfirmingDelete(false)
+    await deleteAutomation(automation.id)
+    navigate('/automations')
   }
 
   const handleSendTestEmail = async () => {
@@ -116,6 +121,11 @@ export default function AutomationDetailPage() {
 
   const handleDeleteRun = (runId, e) => {
     e.stopPropagation()
+    if (confirmingRunId !== runId) {
+      setConfirmingRunId(runId)
+      return
+    }
+    setConfirmingRunId(null)
     deleteRun(runId)
     reloadData()
   }
@@ -216,8 +226,9 @@ export default function AutomationDetailPage() {
 
             <button
               onClick={handleDelete}
-              className="p-2 rounded-xl border border-red-500/20 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
-              title="Delete Automation"
+              aria-label={confirmingDelete ? "Confirm delete automation" : "Delete automation"}
+              className={`p-2 rounded-xl border transition-colors ${confirmingDelete ? 'border-red-500 bg-red-500 text-white' : 'border-red-500/20 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10'}`}
+              title={confirmingDelete ? "Click again to confirm" : "Delete Automation"}
             >
               <Trash2 size={15} />
             </button>
@@ -373,10 +384,11 @@ export default function AutomationDetailPage() {
                             </button>
                             <button
                               onClick={(e) => handleDeleteRun(run.id, e)}
-                              className="p-1 rounded text-gray-400 hover:text-red-500 transition-colors"
-                              title="Delete Run"
+                              aria-label={confirmingRunId === run.id ? "Confirm delete run" : "Delete run"}
+                              className={`p-1 rounded transition-colors ${confirmingRunId === run.id ? 'bg-red-500 text-white px-2 text-xs font-semibold' : 'text-gray-400 hover:text-red-500'}`}
+                              title={confirmingRunId === run.id ? "Click again to confirm" : "Delete Run"}
                             >
-                              <Trash2 size={13} />
+                              {confirmingRunId === run.id ? 'Confirm?' : <Trash2 size={13} />}
                             </button>
                           </div>
                         </td>
