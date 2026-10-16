@@ -26,6 +26,7 @@ export default function AutomationsPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [editingAutomation, setEditingAutomation] = useState(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState(null)
+  const [runError, setRunError] = useState(null)
   const [notificationBanner, setNotificationBanner] = useState(
     'Notification' in window ? Notification.permission : 'unsupported'
   )
@@ -38,7 +39,14 @@ export default function AutomationsPage() {
   useEffect(() => {
     reloadData()
     initAutomationEngine()
-    const interval = setInterval(reloadData, 5000)
+    const interval = setInterval(() => {
+      // Avoid overwriting a manual run in progress
+      setRunningMap((current) => {
+        if (Object.keys(current).some((k) => current[k])) return current
+        reloadData()
+        return current
+      })
+    }, 5000)
     return () => clearInterval(interval)
   }, [])
 
@@ -54,11 +62,12 @@ export default function AutomationsPage() {
   }
 
   const handleRunNow = async (id) => {
+    setRunError(null)
     setRunningMap(prev => ({ ...prev, [id]: true }))
     try {
       await runAutomationNow(id)
     } catch (err) {
-      alert(err.message || 'Run failed')
+      setRunError(err.message || 'Run failed')
     } finally {
       setRunningMap(prev => ({ ...prev, [id]: false }))
       reloadData()
@@ -101,6 +110,8 @@ export default function AutomationsPage() {
     if (!nextRunAt) return '—'
     const diff = nextRunAt - Date.now()
     if (diff <= 0) return 'Due now'
+    const secs = Math.floor(diff / 1000)
+    if (secs < 60) return `in ${secs}s`
     const mins = Math.floor(diff / 60000)
     const hrs = Math.floor(mins / 60)
     const days = Math.floor(hrs / 24)
@@ -121,6 +132,12 @@ export default function AutomationsPage() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-fade-in pb-16">
+      {runError && (
+        <div role="alert" className="flex items-start justify-between gap-3 p-3 rounded-xl border border-red-500/30 bg-red-500/10 text-sm">
+          <span className="text-red-500">{runError}</span>
+          <button onClick={() => setRunError(null)} className="text-red-400 hover:text-red-500 text-xs font-semibold">Dismiss</button>
+        </div>
+      )}
       {/* Top Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
