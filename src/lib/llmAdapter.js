@@ -144,12 +144,13 @@ const PROVIDER_CONFIGS = {
   },
 
   gemini: {
-    url: (model, apiKey) =>
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-    streamUrl: (model, apiKey) =>
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${apiKey}`,
-    buildHeaders: () => ({
+    url: (model) =>
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+    streamUrl: (model) =>
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse`,
+    buildHeaders: (apiKey) => ({
       'Content-Type': 'application/json',
+      'x-goog-api-key': apiKey,
     }),
     buildBody: (_model, systemPrompt, userMessage) => ({
       contents: [
@@ -418,7 +419,10 @@ export async function streamAgent({ provider, model, apiKey, systemPrompt, userM
  */
 export async function fetchGeminiModels(apiKey) {
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`
+    `https://generativelanguage.googleapis.com/v1beta/models`,
+    {
+      headers: { 'x-goog-api-key': apiKey },
+    }
   )
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
   const data = await res.json()
