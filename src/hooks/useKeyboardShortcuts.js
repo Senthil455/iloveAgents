@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 /**
  * A hook to handle keyboard shortcuts globally or within a component.
@@ -6,8 +6,12 @@ import { useEffect } from 'react';
  *                             and values are callback functions.
  */
 export const useKeyboardShortcuts = (shortcuts) => {
+  const shortcutsRef = useRef(shortcuts);
+  shortcutsRef.current = shortcuts;
+
   useEffect(() => {
     const handleKeyDown = (event) => {
+      const activeShortcuts = shortcutsRef.current || {};
       const keys = [];
       if (event.ctrlKey || event.metaKey) keys.push('Control');
       if (event.altKey) keys.push('Alt');
@@ -23,15 +27,21 @@ export const useKeyboardShortcuts = (shortcuts) => {
       // Also support single keys like '/' or '?'
       const singleKey = event.key;
 
-      if (shortcuts[shortcutStr]) {
-        shortcuts[shortcutStr](event);
-      } else if (shortcuts[singleKey] && !['INPUT', 'TEXTAREA'].includes(event.target.tagName)) {
+      if (activeShortcuts[shortcutStr]) {
+        // Escape should never wipe typing work. Only run it when focus
+        // is outside text fields, or when the caller explicitly handles it.
+        if (shortcutStr === 'Escape') {
+          const tag = event.target?.tagName;
+          if (['INPUT', 'TEXTAREA'].includes(tag) && !event.target?.dataset?.allowEscape) return;
+        }
+        activeShortcuts[shortcutStr](event);
+      } else if (activeShortcuts[singleKey] && !['INPUT', 'TEXTAREA'].includes(event.target.tagName)) {
         // For single keys like '/' or '?', we usually don't want them to fire if we are typing in an input
-        shortcuts[singleKey](event);
+        activeShortcuts[singleKey](event);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [shortcuts]);
+  }, []);
 };

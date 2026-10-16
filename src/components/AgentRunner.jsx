@@ -135,8 +135,26 @@ export default function AgentRunner({ agent }) {
     if (canRun() && !loading) handleRun();
   },
     'Escape': () => {
+      // Close overlays first. Only clear the form when there is nothing
+      // else to dismiss and focus is outside text fields.
+      if (playgroundOpen || analyserOpen || historyPanelOpen || scheduleModalOpen) {
+        setPlaygroundOpen(false);
+        setAnalyserOpen(false);
+        setHistoryPanelOpen(false);
+        setScheduleModalOpen(false);
+        return;
+      }
+      const active = document.activeElement;
+      const typing = active && ['INPUT', 'TEXTAREA'].includes(active.tagName);
+      if (typing) {
+        active.blur();
+        return;
+      }
+      if (hasInputContent()) {
+        const ok = window.confirm('Clear all inputs and output?');
+        if (!ok) return;
+      }
       handleClear();
-      setPlaygroundOpen(false);
     },
   });
 
