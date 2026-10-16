@@ -120,6 +120,13 @@ export default function BattleModeArena() {
 
   const [copiedProvider, setCopiedProvider] = useState(null);
   const [copyAnnouncement, setCopyAnnouncement] = useState("");
+  const copyTimerRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    };
+  }, []);
 
   // Store AbortControllers for each provider so we can cancel requests if needed
   const abortControllersRef = useRef({
@@ -164,6 +171,7 @@ export default function BattleModeArena() {
             duration: null,
           },
         }));
+        setFirstFinisher((prev) => prev ?? prov.id);
         return
       }
 
@@ -232,6 +240,7 @@ export default function BattleModeArena() {
               duration: null,
             },
           }));
+          setFirstFinisher((prev) => prev ?? prov.id);
         });
     },
     [agent, inputs, apiKeys],
@@ -288,7 +297,8 @@ export default function BattleModeArena() {
       await navigator.clipboard.writeText(copyText);
       setCopiedProvider(providerId);
       setCopyAnnouncement(`${providerLabel} prompt copied to clipboard.`);
-      setTimeout(() => {
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+      copyTimerRef.current = setTimeout(() => {
         setCopiedProvider(null);
       }, 2000);
     } catch {
