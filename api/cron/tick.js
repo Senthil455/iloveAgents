@@ -124,6 +124,21 @@ export function parseCronResponse(provider, json) {
 }
 
 /**
+ * Escapes HTML special characters to prevent injection in email HTML.
+ *
+ * @param {unknown} value - Value to escape.
+ * @returns {string} Escaped string safe for HTML interpolation.
+ */
+export function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+/**
  * Sends an email notification for a completed automation run via Resend.
  *
  * @param {string} apiKey - Resend API key.
@@ -146,7 +161,7 @@ export async function sendCronEmailNotification(apiKey, { to, name, output }) {
         from: 'Open Agents Hub <automations@openagentshub.dev>',
         to: [to],
         subject: `[Open Agents Hub] ✅ Completed: ${name}`,
-        html: `<h2>${name} Run Output</h2><pre>${output}</pre>`,
+        html: `<h2>${escapeHtml(name)} Run Output</h2><pre>${escapeHtml(output)}</pre>`,
       }),
     })
   } catch (netErr) {
