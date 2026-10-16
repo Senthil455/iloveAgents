@@ -13,6 +13,9 @@
 
 const modules = import.meta.glob('./definitions/*.js', { eager: false });
 
+const VALID_PROVIDERS = new Set(['openai', 'anthropic', 'gemini', 'openrouter', 'any']);
+const VALID_OUTPUT_TYPES = new Set(['markdown', 'text', 'json']);
+
 const normalizeAgents = (agents) => {
   const seenIds = new Set();
   return agents.filter(Boolean).filter((agent) => {
@@ -22,6 +25,22 @@ const normalizeAgents = (agents) => {
     }
     if (seenIds.has(agent.id)) {
       console.warn(`Skipping duplicate agent id "${agent.id}".`);
+      return false;
+    }
+    if (!agent.name || !agent.description) {
+      console.warn(`Skipping agent "${agent.id}" with missing name or description.`);
+      return false;
+    }
+    if (agent.provider && !VALID_PROVIDERS.has(agent.provider)) {
+      console.warn(`Skipping agent "${agent.id}" with unsupported provider "${agent.provider}".`);
+      return false;
+    }
+    if (agent.outputType && !VALID_OUTPUT_TYPES.has(agent.outputType)) {
+      console.warn(`Skipping agent "${agent.id}" with unsupported outputType "${agent.outputType}".`);
+      return false;
+    }
+    if (!Array.isArray(agent.inputs)) {
+      console.warn(`Skipping agent "${agent.id}" without an inputs array.`);
       return false;
     }
     seenIds.add(agent.id);

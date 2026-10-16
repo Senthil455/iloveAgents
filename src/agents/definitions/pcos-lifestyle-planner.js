@@ -1,4 +1,3 @@
-import { HeartPulse } from 'lucide-react';
 const pcosLifestylePlanner = {
   id: 'pcos-lifestyle-planner',
   name: 'PCOS Lifestyle Planner',
